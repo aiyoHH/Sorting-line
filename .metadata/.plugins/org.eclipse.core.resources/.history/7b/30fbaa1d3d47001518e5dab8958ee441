@@ -1,0 +1,60 @@
+package com.example.view;
+
+import android.content.Context;
+import android.util.AttributeSet;
+import android.view.View;
+import android.view.ViewGroup;
+
+public class MyFrameLayout extends ViewGroup {
+
+	public MyFrameLayout(Context context) {
+		this(context, null);
+	}
+
+	public MyFrameLayout(Context context, AttributeSet attrs) {
+		super(context, attrs);
+	}
+
+	// 要控制内部尺寸大小,需重写onMeasure()
+	@Override
+	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+
+		// 获取父控件中,子控件数量
+		int count = getChildCount();
+		for (int i = 0; i < count; i++) {
+			// 获得每一个子控件的size
+			View childView = getChildAt(i);
+			// 去测量每一个孩子的尺寸,我觉得后面这俩个尺寸没有实际意义,用0应该也没问题,只是提醒要去测量
+			// childView.measure(widthMeasureSpec, heightMeasureSpec);和下面的意思一样的
+			// mode三个模式:UNSPECIFIED/数字0表示:未申明的 EXACTLY:精确 AT_MOST:最大值为
+			measureChild(childView,
+					MeasureSpec.makeMeasureSpec(200, MeasureSpec.EXACTLY),
+					MeasureSpec.makeMeasureSpec(35, MeasureSpec.EXACTLY));
+		
+			
+		}
+
+		// This method must be called by {@link #onMeasure(int, int)} to store
+		// the measured width and measured height.
+		// Failing to do so will trigger an exception at measurement time.
+		// measuredWidth The measured width of this view ...measuredHeight The
+		// measured height of this view
+		// setMeasuredDimension(measuredWidth, measuredHeight);
+        //这个super不能删
+		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+	}
+	//测量完一定要布局
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+    	//给每一个子控件布局
+    	int count = getChildCount();
+		for (int i = 0; i < count; i++) {
+		    View childView = getChildAt(i);
+		    childView.layout(10, 5, 150, 40);
+		}
+    }
+	
+	
+	
+	
+}

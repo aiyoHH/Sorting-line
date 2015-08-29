@@ -1,0 +1,168 @@
+package com.example.view;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import android.content.Context;
+import android.util.AttributeSet;
+import android.view.View;
+import android.view.ViewGroup;
+
+public class MyFrameLayout extends ViewGroup {
+    
+	/**
+	 * 行的总集合
+	 */
+	private List<Line> mList = new ArrayList<MyFrameLayout.Line>();
+	/**
+	 * 当前行
+	 */
+	private Line mCurrentLine=null;
+
+	public MyFrameLayout(Context context) {
+		this(context, null);
+	}
+
+	public MyFrameLayout(Context context, AttributeSet attrs) {
+		super(context, attrs);
+	}
+
+	// 要控制内部尺寸大小,需重写onMeasure()
+	@Override
+	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+
+		// 获取父控件中,子控件数量
+		int count = getChildCount();
+		for (int i = 0; i < count; i++) {
+			// 获得每一个子控件的size
+			View childView = getChildAt(i);
+			// 去测量每一个孩子的尺寸,我觉得后面这俩个尺寸没有实际意义,用0应该也没问题,只是提醒要去测量
+			// childView.measure(widthMeasureSpec, heightMeasureSpec);和下面的意思一样的
+			// mode三个模式:UNSPECIFIED/数字0表示:未申明的 EXACTLY:精确 AT_MOST:最大值为
+			// measureChild(childView,MeasureSpec.makeMeasureSpec(200, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(35, MeasureSpec.EXACTLY));
+           
+			//这个无法理解,怎么一个子控件就能达到整个父控件的长宽呢
+			measureChild(childView, widthMeasureSpec, heightMeasureSpec);
+			
+			//如果当前行为空
+			if(mCurrentLine==null){
+				mCurrentLine=new Line();
+				//当前的子孩子就可以添加到行里了
+				mCurrentLine.addChildView(childView);
+			}else if(mCurrentLine.canAddChildView(childView)){
+				//再有子控件的话,做完约束条件的判断还可以添加,我们就让添加
+				mCurrentLine.addChildView(childView);
+			}else{
+				//说明下子控件已经不能添加进去了,我们就要另起一行,在开始添加
+				mCurrentLine=new Line();
+				//当前的子孩子就可以添加到行里了
+				mCurrentLine.addChildView(childView);
+			}
+		
+		   setMeasuredDimension(measuredWidth, measuredHeight)
+		
+		
+		}
+
+		// This method must be called by {@link #onMeasure(int, int)} to store
+		// the measured width and measured height.
+		// Failing to do so will trigger an exception at measurement time.
+		// measuredWidth The measured width of this view ...measuredHeight The
+		// measured height of this view
+		// setMeasuredDimension(measuredWidth, measuredHeight);
+		// 这个super不能删
+		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+	}
+
+	// 测量完一定要布局
+	@Override
+	protected void onLayout(boolean changed, int l, int t, int r, int b) {
+		// 给每一个子控件布局
+		int count = getChildCount();
+		for (int i = 0; i < count; i++) {
+			View childView = getChildAt(i);
+			childView.layout(10, 5, 150, 40);
+		}
+	}
+
+	// 从布局来看剩余显示的View可以看成是一行,一行的往ViewGroup里面加
+	private class Line {
+
+		// 属性
+		/**
+		 * 行的宽度
+		 */
+		private int lineWidth;
+		/**
+		 * 行中已经使用的宽度
+		 */
+		private int useWidth;
+		/**
+		 * 行的高度
+		 */
+		private int lineHeight;
+		/**
+		 * 子控件之间的padding
+		 */
+		private int childSpace;
+
+		// 构造方法
+		public  Line(int lineWidth,int lineHeight,int childSpace) {
+		     this.lineHeight=lineHeight;
+		     this.lineWidth=lineWidth;
+		     this.childSpace=childSpace;
+		}
+
+		/**
+		 * 行中包含多个子控件,装入集合
+		 */
+		private List<View> list = new ArrayList<View>();
+
+		/**
+		 * 是否如可以往行控件中添加子控件
+		 * 
+		 * @param view
+		 * @return
+		 */
+		private boolean canAddChildView(View view) {
+			// 如果LIST<Line>没有,那肯定可以添加
+			if (list.size() == 0) {
+				return true;
+			} else if (useWidth + childSpace + view.getMeasuredWidth() <= lineWidth) {
+				// 控件加入再加上各种约束条件还小于行宽度现限制,那肯定可以添加
+				return true;
+			}
+			return false;
+		}
+
+		/**
+		 * 往行里添加子控件,添加前.必需先做canAddChildView()的判断
+		 * 
+		 * @param view
+		 */
+		private void addChildView(View view) {
+			// 这里有个极限条件,我们要调整一下,当行里面的控件为0的时候肯定可以添加,但是我们子控件的最大宽度不能大于父控件的,要是超过我们可以让子控件等于父控件的
+			int height = view.getMeasuredHeight();
+			int width = view.getMeasuredWidth();
+
+			// 第一次添加时,有极限条件要额外考虑下,来到这,说明这个view可以加入行,对应的更改成员属性的值,作为下一个控件能否加入的约束条
+			if (list.size() == 0) {
+				if (width > lineWidth) {
+					width = lineWidth;
+					useWidth = lineWidth;
+				} else {
+					useWidth = width;
+				}
+			} else {
+				// 不是第一次加入
+				useWidth += childSpace + width;
+			}
+			// 行的高度,谁大取谁的
+			lineHeight = (lineHeight > view.getMeasuredHeight() ? lineHeight
+					: view.getMeasuredHeight());
+			list.add(view);
+		}
+
+	}
+
+}
